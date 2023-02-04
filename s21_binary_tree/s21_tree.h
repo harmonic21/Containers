@@ -16,7 +16,7 @@ namespace s21 {
         using const_reference = const value_type&;
         using iterator = Iterator;
         using const_iterator = ConstIterator;
-        using size_type = std::size_t;
+        using size_type = size_t;
     private:
         Node* before_root_;
         Node* nil_;
@@ -46,7 +46,7 @@ namespace s21 {
         }
 
         iterator begin() noexcept {
-            return iterator(minNode(before_root_->parent_), this);
+            return iterator(s21_min_node(before_root_->parent_), this);
         }
 
         iterator end() noexcept {
@@ -54,7 +54,7 @@ namespace s21 {
         }
 
         const_iterator cbegin() const noexcept {
-            return const_iterator(minNode(before_root_->parent_));
+            return const_iterator(s21_min_node(before_root_->parent_));
         }
 
         const_iterator cend() const noexcept {
@@ -89,6 +89,7 @@ namespace s21 {
             if (parent_for_new_node == nullptr) {
                 before_root_->parent_ = new_node;
                 new_node->red_ = false;
+                new_node->parent_ = nil_;
             } else {
                 new_node->parent_ = parent_for_new_node;
                 if (value < parent_for_new_node->key_) {
@@ -98,57 +99,140 @@ namespace s21 {
                 }
             }
             size_++;
-          //  s21_balancingTree();
+            s21_balancing_tree_after_insert(new_node);
             return {iterator(new_node, this), true};
         }
+
+        void erase(iterator pos) {
+            Node* current_node = pos.get_node();
+            if (current_node != nil_) {
+                s21_delete_node(current_node);
+            }
+        }
+
+        void s21_delete_node(Node* del) {
+            if (del->left_ != nil_ && del->right_ != nil_ && del->red_) {
+                Node* left_max = s21_max_node(del->left_);
+                std::swap(left_max->key_, del->key_);
+                s21_delete_node(left_max);
+            } else if (del->left_ != nil_ && del->right_ != nil_ && !del->red_) {
+                Node* left_max = s21_max_node(del->left_);
+                std::swap(left_max->key_, del->key_);
+                s21_delete_node(left_max);
+            } else if (!del->red_ && (del->left_ != nil_ || del->right_ != nil_)) { // у черного узла - если один ребенок, то точно красный без детей
+                Node* son = del->left_ != nil_ ? del->left_ : del->right_;
+                std::swap(son->key_, del->key_);
+                s21_delete_node(son);
+            } else if (del->red_ && del->right_ == nil_ && del->left_ == nil_) {
+                s21_delete_son(del);
+            } else if (!del->red_ && del->right_ == nil_ && del->left_ == nil_) {
+                Node* parent = del->parent_;
+                s21_delete_son(del);
+                s21_balancing_tree_after_erase(parent);
+            }
+            size_--;
+        }
+
+        void s21_delete_son(Node* son) {
+            if (son == son->parent_->left_) {
+                son->parent_->left_ = nil_;
+            } else {
+                son->parent_->right_ = nil_;
+            }
+            delete son;
+        }
+
+
+        //  https://habr.com/ru/company/otus/blog/521034/
+        void s21_balancing_tree_after_erase(Node *current) {
+                if (s21_is_red(current)
+                        && s21_is_black(current->left_)
+                        && s21_is_black(current->left_->left_)
+                        && s21_is_black(current->left_->right_)) {
+                    current->left_->red_ = true;
+                    current->red_ = false;
+                    current = current->parent_;
+                } else if (s21_is_red(current)
+                        && s21_is_black(current->left_)
+                        && s21_is_red(current->left_->left_)) {
+                    s21_rotate_right(current);
+                } else if (s21_is_black(current)
+                        && s21_is_red(current->left_)
+                        && s21_is_black(current->left_->left_)
+                        && s21_is_black(current->left_->right_)) {
+                    current->left_->right_->red_ = true;
+                    current->left_->red_ = false;
+                    s21_rotate_right(current);
+                } else if(s21_is_black(current)
+                        && s21_is_red(current->left_)
+                        && s21_is_red(current->left_->right_->left_)) {
+                    current->left_->right_->left_->red_ = false;
+                    s21_rotate_left(current->left_);
+                    s21_rotate_left(current);
+                } else if (s21_is_black(current)
+                    && s21_is_black(current->left_)
+                    && s21_is_red(current->left_->right_)) {
+                    current->left_->right_->red_ = false;
+                    s21_rotate_left(current->left_);
+                    s21_rotate_left(current);
+                } else {
+                    current->left_->red_ = true;
+                    s21_balancing_tree_after_erase(current->parent_);
+                }
+        }
+
+        bool s21_is_red(Node* current) {
+           bool result = false;
+            if (current != nullptr) {
+                result = current->red_;
+            }
+            return result;
+        }
+
+        bool s21_is_black(Node* current) {
+            bool result = false;
+            if (current != nullptr) {
+                result = !current->red_;
+            }
+            return result;
+        }
+
+
+        bool find(const_reference value) {
+            Node* current = before_root_->parent_;
+            while (current != nil_ && current->key_ != value)  {
+                if (current->key_ < value) {
+                    current = current->left_;
+                } else {
+                    current = current->right_;
+                }
+            }
+            return current->key_ == value;
+        }
+
+    private:
+        void s21_copy_tree();
 
         void s21_nil_init(Node* current_node) {
             current_node->left_ = current_node->right_ = nil_;
         }
 
-        void erase(iterator pos);
-
-    private:
-
-        Node* maxNode(Node* current) {
-            Node* temp = current;
-            if (temp == nil_) {
-                temp = before_root_->parent_;
+        Node* s21_max_node(Node* node) {
+            Node* result = node;
+            if (result == nil_) {
+                result = before_root_->parent_;
             }
-            while(temp != nil_ && temp->right_ != nil_) {
-                temp = temp->right_;
-            }
-            return temp;
-        }
-
-        Node* minNode(Node* current) {
-            Node* temp = current;
-            if (temp == nil_) {
-                temp = before_root_->parent_;
-            }
-            while (temp != nil_ && temp->left_ != nil_) {
-                temp = temp->left_;
-            }
-            return temp;
-        }
-
-        Node* nodeNext(const Node* node) {
-            Node* result = nil_;
-            if (node != nil_) {
-                if (node->right_ != nil_) {
-                    result = (Node*) minNode(node->right_);
-                } else if (node == node->parent_->left_) {
-                    result = node->parent_;
-                }
+            while (result != nil_ && result->right_ != nil_) {
+                result = result->right_;
             }
             return result;
         }
 
-        Node* nodePrev(Node* node) {
-           Node* result = node;
+        Node* s21_node_prev(Node* node) {
+           Node* result = nil_;
             if (node != nil_) {
                 if (node->left_ != nil_) {
-                    result = maxNode(node->left_);
+                    result = s21_max_node(node->left_);
                 } else if (node == node->parent_->right_) {
                     result = node->parent_;
                 } else {
@@ -158,7 +242,7 @@ namespace s21 {
                         if (temp->parent_ != nil_) {
                             result = temp->parent_;
                             break;
-                        } else if (temp == *begin()) {
+                        } else if (temp == before_root_->parent_) {
                             result = temp;
                             break;
                         }
@@ -168,21 +252,92 @@ namespace s21 {
             return result;
         }
 
-       void s21_balancingTree();
+        Node* s21_min_node(Node* node) {
+            Node* result = node;
+            if (result == nil_) {
+                result = before_root_->parent_;
+            }
+            while (result != nil_ && result->left_ != nil_) {
+                result = result->left_;
+            }
+            return result;
+        }
 
-       void s21_rotateLeft(Node* node) {
+        Node* s21_node_next(Node* node) {
+            Node* result = nil_;
+            if (node != nil_) {
+                if (node->right_ != nil_) {
+                    result = s21_min_node(node->right_);
+                } else if (node == node->parent_->left_) {
+                    result = node->parent_;
+                } else {
+                    while (node == node->parent_->right_) {     // while x is a right son
+                        node = node->parent_;
+                    }
+                    result = node->parent_;
+                }
+            }
+            return result;
+        }
+
+        void s21_balancing_tree_after_insert(Node *current_node) {
+            while (current_node != before_root_->parent_ && current_node->parent_->red_) {
+                if (current_node->parent_ == current_node->parent_->parent_->left_) {  //  parent of cn - is left son
+                    Node *node = current_node->parent_->parent_->right_;
+                    if (node != nil_ && node->red_) {
+                        current_node->parent_->red_ = false;
+                        node->red_ = false;
+                        current_node = current_node->parent_->parent_;
+                        current_node->red_ = true;
+                    } else {
+                        if (current_node == current_node->parent_->right_) {
+                            current_node = current_node->parent_;
+                            s21_rotate_left(current_node);
+                        }
+                        current_node->parent_->red_ = false;
+                        current_node->parent_->parent_->red_ = true;
+                        s21_rotate_right(current_node->parent_->parent_);
+                    }
+                } else if (current_node->parent_ ==
+                           current_node->parent_->parent_->right_) {  // parent of cn - is right son
+                    Node *node = current_node->parent_->parent_->left_;
+                    if (node != nil_ && node->red_) {
+                        current_node->parent_->red_ = false;
+                        node->red_ = false;
+                        current_node = current_node->parent_->parent_;
+                        if (before_root_->parent_ != current_node) {
+                            current_node->red_ = true;
+                        }
+                    } else {
+                        if (current_node == current_node->parent_->left_) {
+                            s21_rotate_right(current_node);
+                            current_node = current_node->parent_;
+                        }
+                        current_node->parent_->red_ = false;
+                        current_node->parent_->parent_->red_ = true;
+                        s21_rotate_left(current_node->parent_->parent_);
+                    }
+                }
+            }
+        }
+
+       void s21_rotate_left(Node* node) {
             Node* right_son = node->right_;
-            if (right_son != nullptr) {
+            if (right_son != nil_) {
                 Node *parent = node->parent_;
                 right_son->parent_ = parent;
-                before_root_->parent_ = right_son;
-                if (node == parent->left_) {
-                    parent->left_ = right_son;
+                if (parent != nil_) {
+                    if (node == parent->left_) {
+                        parent->left_ = right_son;
+                    } else {
+                        parent->right_ = right_son;
+                    }
                 } else {
-                    parent->right_ = right_son;
+                    before_root_->parent_ = right_son;
+                    right_son->parent_ = nil_;
                 }
                 node->right_ = right_son->left_;
-                if (right_son->left_ != nullptr) {
+                if (right_son->left_ != nil_) {
                     right_son->left_->parent_ = node;
                 }
                 right_son->left_ = node;
@@ -190,19 +345,23 @@ namespace s21 {
             }
        }
 
-       void rightRotation(Node* node) {
+       void s21_rotate_right(Node* node) {
            Node*  left_son = node->left_;
-           if (left_son != nullptr) {
+           if (left_son != nil_) {
                Node* parent = node->parent_;
                left_son->parent_ = parent;
-               before_root_->parent_ = left_son;
-               if (node == parent->left_) {
-                   parent->left_ = left_son;
+               if (parent != nil_) {
+                   if (node == parent->left_) {
+                       parent->left_ = left_son;
+                   } else {
+                       parent->right_ = left_son;
+                   }
                } else {
-                   parent->right_ = left_son;
+                   before_root_->parent_ = left_son;
+                   left_son->parent_ = nil_;
                }
                node->left_ = left_son->right_;
-               if (left_son->right_ != nullptr) {
+               if (left_son->right_ != nil_) {
                    left_son->right_->parent_ = node;
                }
                left_son->right_ = node;
@@ -235,9 +394,11 @@ namespace s21 {
            reference operator*() noexcept { return current_node_->key_; }
 
            iterator& operator++() noexcept {
-               current_node_ = (Node*) binaryTree_->nodeNext(current_node_);
+               current_node_ = binaryTree_->s21_node_next(current_node_);
                return *this;
            }
+
+           Node* get_node() { return current_node_; }
 
             iterator operator++(int) noexcept {
                 iterator current = iterator(current_node_, binaryTree_);
@@ -246,7 +407,7 @@ namespace s21 {
             }
 
             iterator& operator--() noexcept {
-                current_node_ = (Node*) binaryTree_->nodePrev(current_node_);
+                current_node_ = binaryTree_->s21_node_prev(current_node_);
                 return *this;
             }
 
@@ -276,7 +437,6 @@ namespace s21 {
         class ConstIterator {
 
         };
-
     };
 
 }  //  namespace s21
