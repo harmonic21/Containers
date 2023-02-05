@@ -4,7 +4,6 @@
 
 /**
  * FIXME:
- * 0) деструктор
  * 1) копирование
  * 2) конструкторы
  */
@@ -12,16 +11,17 @@
 TEST(method, insert) {
     s21::BinaryTree<int> a;
 
-    a.insert(100);
-    a.insert(200);
-    a.insert(300);
-    a.insert(400);
-    a.insert(500);
-    a.insert(50);
-    a.insert(70);
-    a.insert(131);
-    a.insert(134);
-    a.insert(149);
+    a.insert_unique(100);
+    a.insert_unique(200);
+    a.insert_unique(300);
+    a.insert_unique(400);
+    a.insert_unique(500);
+    a.insert_unique(50);
+    a.insert_unique(70);
+    a.insert_unique(131);
+    a.insert_unique(134);
+    a.insert_unique(149);
+    a.insert_unique(149);
 
     for (s21::BinaryTree<int>::iterator it = a.begin(); it != a.end(); it++) {
         std::cout << *it << '\n';
@@ -35,6 +35,8 @@ TEST(method, insert) {
     for (s21::BinaryTree<int>::iterator it = a.begin(); it != a.end(); it++) {
         std::cout << *it << '\n';
     }
+    a.clear();
+
 }
 
 
