@@ -24,7 +24,7 @@ namespace s21 {
     private:
         Node *before_root_;
         Node *nil_;
-        size_type size_;
+        size_type size_{};
     public:
         BinaryTree() : before_root_(new Node()), nil_(new Node()), size_(0) {
             before_root_->parent_ = nil_;
@@ -76,11 +76,11 @@ namespace s21 {
         }
 
         const_iterator cbegin() const noexcept {
-            return const_iterator(s21_min_node(before_root_->parent_));
+            return const_iterator(s21_min_node(before_root_->parent_), this);
         }
 
         const_iterator cend() const noexcept {
-            return iterator(nil_, this);
+            return const_iterator(nil_, this);
         }
 
         bool empty() const noexcept {
@@ -99,6 +99,7 @@ namespace s21 {
             if (size_ != 0) {
                 s21_delete_all(before_root_->parent_);
             }
+            before_root_ = new Node();
             before_root_->parent_ = nil_;
             size_ = 0;
         }
@@ -158,79 +159,60 @@ namespace s21 {
 
         void merge(BinaryTree<value_type> &other) {
             iterator it = other.begin();
-            while (it != end()) {
+            while (it != other.end()) {
                 Node *other_current = it.get_node();
                 it++;
 
-                if (other_current->right_ != nil_) {
+                if (other_current->right_ != other.end().get_node()) {
                     other_current->right_->parent_ = other_current->parent_;
                 }
                 if (other_current->parent_->left_ == other_current) {
-                    other_current->parent_->left_ = other->end();
+                    other_current->parent_->left_ = other.end().get_node();
                 } else if (other_current->parent_->right_ == other_current) {
-                    other_current->parent_->right_ = other->end();
+                    other_current->parent_->right_ = other.end().get_node();
+                }
+                if (other_current->parent_ == other.end().get_node()) {
+                    other.before_root_->parent_ = other_current->right_;
                 }
                 other_current->red_ = true;
                 insert(other_current, false);
+                other.size_--;
             }
         }
 
         void unique_merge(BinaryTree<value_type> &other) {
             iterator it = other.begin();
-            while (it != end()) {
+            while (it != other.end()) {
                 Node *other_current = it.get_node();
                 it++;
-                if (!contains(const Key& key)) { // нет контейнс
-                    s21_cut_node(other_current);
+                if (!contains(other_current->key_)) {
+                    other.s21_cut_node(other_current);
+                    if (other_current->parent_ == other.end().get_node()) {
+                        other.before_root_->parent_ = other_current->right_;
+                    }
+                    other_current->red_ = true;
                     insert(other_current, false);
+                    other.size_--;
                 }
-            }
-        }
 
-        Node *s21_cut_node(Node *current) {
-            if (current->left_ != nil_ && current->right_ != nil_ && current->red_) {
-                Node *left_max = s21_max_node(current->left_);
-                std::swap(left_max->key_, current->key_);
-                s21_cut_node(left_max);
-            } else if (current->left_ != nil_ && current->right_ != nil_ && !current->red_) {
-                Node *left_max = s21_max_node(current->left_);
-                std::swap(left_max->key_, current->key_);
-                cut_node(left_max);
-            } else if (!current->red_ && (current->left_ != nil_ || current->right_ != nil_)) {
-                // у черного узла - если один ребенок, то точно красный без детей
-                Node *son = current->left_ != nil_ ? current->left_ : current->right_;
-                std::swap(son->key_, current->key_);
-                s21_cut_node(son);
-            } else if (current->red_ && current->right_ == nil_ && current->left_ == nil_) {
-               s21_cut_son(current);
-            } else if (!current->red_ && current->right_ == nil_ && current->left_ == nil_) {
-                Node *parent = current->parent_;
-                s21_cut_son(current);
-                s21_balancing_tree_after_erase(parent);
-            }
-            size_--;
-        }
-
-        void s21_cut_son(Node *son) {
-            if (son == son->parent_->left_) {
-                son->parent_->left_ = nil_;
-            } else {
-                son->parent_->right_ = nil_;
             }
         }
 
         iterator find(const_reference value) {
             Node *current = before_root_->parent_;
-            Node *result = end();
+            Node *result = nil_;
             while (current != nil_) {
-                if (current->key_ < value) {
+                if (current->key_ == value) {
                     result = current;
+                    break;
+                }
+                if (value < current->key_) {
                     current = current->left_;
                 } else {
                     current = current->right_;
                 }
             }
-            return iterator(result);
+            return iterator(result, this);
         }
 
         bool contains(const Key &key) {
@@ -259,16 +241,16 @@ namespace s21 {
             }
         }
 
-
-        void s21_copy_tree(BinaryTree<value_type> binaryTree) {
-            for (auto it = binaryTree.begin(); it != binaryTree.end(); it++) {
-                insert(*it);
+        void s21_copy_tree(const BinaryTree& binaryTree) {
+            for (auto it = binaryTree.cbegin(); it != binaryTree.cend(); ++it) {
+                insert_not_unique(*it);
             }
         }
 
-        void s21_swap(BinaryTree<value_type> binaryTree) {
+        void s21_swap(BinaryTree<value_type>& binaryTree) {
             std::swap(before_root_->parent_, binaryTree.before_root_->parent_);
             std::swap(size_, binaryTree.size_);
+            std::swap(nil_, binaryTree.nil_);
         }
 
         void s21_delete_node(Node *del) {
@@ -280,8 +262,8 @@ namespace s21 {
                 Node *left_max = s21_max_node(del->left_);
                 std::swap(left_max->key_, del->key_);
                 s21_delete_node(left_max);
-            } else if (!del->red_ && (del->left_ != nil_ || del->right_ !=
-                                                            nil_)) { // у черного узла - если один ребенок, то точно красный без детей
+            } else if (!del->red_ && (del->left_ != nil_ || del->right_ != nil_)) {
+                // у черного узла - если один ребенок, то точно красный без детей
                 Node *son = del->left_ != nil_ ? del->left_ : del->right_;
                 std::swap(son->key_, del->key_);
                 s21_delete_node(son);
@@ -290,7 +272,11 @@ namespace s21 {
             } else if (!del->red_ && del->right_ == nil_ && del->left_ == nil_) {
                 Node *parent = del->parent_;
                 s21_delete_son(del);
-                s21_balancing_tree_after_erase(parent);
+                if(parent != nil_) {
+                    s21_balancing_tree_after_erase(parent);
+                } else {
+                    before_root_->parent_ = nil_;
+                }
             }
             size_--;
         }
@@ -298,6 +284,42 @@ namespace s21 {
         void s21_delete_son(Node *son) {
             s21_cut_son(son);
             delete son;
+        }
+
+        void s21_cut_node(Node *current) {
+            if (current->left_ != nil_ && current->right_ != nil_ && current->red_) {
+                Node *left_max = s21_max_node(current->left_);
+                std::swap(left_max->key_, current->key_);
+                s21_cut_node(left_max);
+            } else if (current->left_ != nil_ && current->right_ != nil_ && !current->red_) {
+                Node *left_max = s21_max_node(current->left_);
+                std::swap(left_max->key_, current->key_);
+                s21_cut_node(left_max);
+            } else if (!current->red_ && (current->left_ != nil_ || current->right_ != nil_)) {
+                // у черного узла - если один ребенок, то точно красный без детей
+                Node *son = current->left_ != nil_ ? current->left_ : current->right_;
+                std::swap(son->key_, current->key_);
+                s21_cut_node(son);
+            } else if (current->red_ && current->right_ == nil_ && current->left_ == nil_) {
+                s21_cut_son(current);
+            } else if (!current->red_ && current->right_ == nil_ && current->left_ == nil_) {
+                Node *parent = current->parent_;
+                s21_cut_son(current);
+                if(parent != nil_) {
+                    s21_balancing_tree_after_erase(parent);
+                } else {
+                    before_root_->parent_ = nil_;
+                }
+            }
+            size_--;
+        }
+
+        void s21_cut_son(Node *son) {
+            if (son == son->parent_->left_) {
+                son->parent_->left_ = nil_;
+            } else {
+                son->parent_->right_ = nil_;
+            }
         }
 
         //  https://habr.com/ru/company/otus/blog/521034/
@@ -346,7 +368,7 @@ namespace s21 {
             return current != nullptr && !current->red_;
         }
 
-        Node *s21_max_node(Node *node) {
+        Node *s21_max_node(Node *node) const noexcept {
             Node *result = node;
             if (result == nil_) {
                 result = before_root_->parent_;
@@ -357,7 +379,7 @@ namespace s21 {
             return result;
         }
 
-        Node *s21_node_prev(Node *node) {
+        Node *s21_node_prev(const Node *node) const noexcept {
             Node *result = nil_;
             if (node != nil_) {
                 if (node->left_ != nil_) {
@@ -381,7 +403,7 @@ namespace s21 {
             return result;
         }
 
-        Node *s21_min_node(Node *node) {
+        Node *s21_min_node(Node *node) const noexcept {
             Node *result = node;
             if (result == nil_) {
                 result = before_root_->parent_;
@@ -392,7 +414,8 @@ namespace s21 {
             return result;
         }
 
-        Node *s21_node_next(Node *node) {
+
+        Node *s21_node_next(const Node *node) const noexcept {
             Node *result = nil_;
             if (node != nil_) {
                 if (node->right_ != nil_) {
@@ -427,8 +450,8 @@ namespace s21 {
                         current_node->parent_->parent_->red_ = true;
                         s21_rotate_right(current_node->parent_->parent_);
                     }
-                } else if (current_node->parent_ ==
-                           current_node->parent_->parent_->right_) {  // parent of cn - is right son
+                } else if (current_node->parent_ == current_node->parent_->parent_->right_) {
+                    // parent of cn - is right son
                     Node *node = current_node->parent_->parent_->left_;
                     if (node != nil_ && node->red_) {
                         current_node->parent_->red_ = false;
@@ -439,8 +462,8 @@ namespace s21 {
                         }
                     } else {
                         if (current_node == current_node->parent_->left_) {
-                            s21_rotate_right(current_node);
                             current_node = current_node->parent_;
+                            s21_rotate_right(current_node);
                         }
                         current_node->parent_->red_ = false;
                         current_node->parent_->parent_->red_ = true;
@@ -507,21 +530,19 @@ namespace s21 {
             Node *right_;
             value_type key_;
         public:
-            Node()
-                    : red_(false), parent_(nullptr), left_(nullptr), right_(nullptr), key_(value_type{}) {};
+            Node() : red_(false), parent_(nullptr), left_(nullptr), right_(nullptr), key_(value_type{}) {};
 
-            explicit Node(Key key)
-                    : red_(true), parent_(nullptr), left_(nullptr), right_(nullptr), key_(key) {};
+            explicit Node(Key key) : red_(true), parent_(nullptr), left_(nullptr), right_(nullptr), key_(key) {};
         };
 
 
         class Iterator {
         private:
             Node *current_node_;
-            BinaryTree<value_type> *binaryTree_;
+            BinaryTree* binaryTree_;
         public:
-            explicit Iterator(Node *n, BinaryTree<value_type> *binaryTree) : current_node_(n),
-                                                                             binaryTree_(binaryTree) {};
+            Iterator() = delete;
+            explicit Iterator(Node *n, BinaryTree* binaryTree) : current_node_(n), binaryTree_(binaryTree) {};
 
             reference operator*() noexcept { return current_node_->key_; }
 
@@ -569,19 +590,23 @@ namespace s21 {
         class ConstIterator {
         private:
             const Node *current_node_;
-            const BinaryTree<value_type> *binaryTree_;
+            const BinaryTree<value_type>* binaryTree_;
         public:
-            ConstIterator(const Node *n, const BinaryTree<value_type> *binaryTree)
-                    : current_node_(n), binaryTree_(binaryTree) {};
+            ConstIterator() = delete;
 
-            reference operator*() const noexcept { return current_node_->key_; }
+            ConstIterator(const Node *n, const BinaryTree<value_type>* binaryTree) : current_node_(n), binaryTree_(binaryTree) {};
+
+            reference operator*() const noexcept {
+                Node* temp = (Node*) current_node_;
+                return temp->key_;
+            }
 
             const_iterator &operator++() noexcept {
-                current_node_ = binaryTree_->s21_node_next(current_node_);
+                current_node_ = binaryTree_->s21_node_next( current_node_);
                 return *this;
             }
 
-            const Node *get_node() { return current_node_; }
+            const Node *get_node() noexcept { return current_node_; }
 
             const_iterator operator++(int) noexcept {
                 const_iterator current = const_iterator(current_node_, binaryTree_);
@@ -590,7 +615,7 @@ namespace s21 {
             }
 
             const_iterator &operator--() noexcept {
-                current_node_ = binaryTree_->s21_node_prev(current_node_);
+                const_cast<const Node*>(current_node_) = binaryTree_->s21_node_prev(current_node_);
                 return *this;
             }
 
@@ -615,7 +640,6 @@ namespace s21 {
             bool operator!=(const iterator &other) const noexcept {
                 return current_node_ != other.current_node_;
             }
-
         };
     };
 
