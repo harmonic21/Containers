@@ -92,7 +92,7 @@ namespace s21 {
         }
 
         size_type max_size() const noexcept {
-            return ((SIZE_MAX / 2) / sizeof(BinaryTree<value_type> *)) - sizeof(Node *) * 2;
+            return SIZE_MAX / (sizeof(Node) * 2);
         }
 
         void clear() {
@@ -199,20 +199,7 @@ namespace s21 {
         }
 
         iterator find(const_reference value) {
-            Node *current = before_root_->parent_;
-            Node *result = nil_;
-            while (current != nil_) {
-                if (current->key_ == value) {
-                    result = current;
-                    break;
-                }
-                if (value < current->key_) {
-                    current = current->left_;
-                } else {
-                    current = current->right_;
-                }
-            }
-            return iterator(result, this);
+            return lower_bound(value);
         }
 
         bool contains(const Key &key) {
@@ -221,11 +208,37 @@ namespace s21 {
         }
 
         iterator lower_bound(const Key &key) {
-
+            Node *current = before_root_->parent_;
+            Node *result = nil_;
+            while (current != nil_) {
+                if (current->key_ == key) {
+                    result = current;
+                    break;
+                }
+                if (key < current->key_) {
+                    current = current->left_;
+                } else {
+                    current = current->right_;
+                }
+            }
+            return iterator(result, this);
         }
 
         iterator upper_bound(const Key &key) {
-
+            Node *current = before_root_->parent_;
+            Node *result = nil_;
+            while (current != nil_) {
+                if (current->key_ > key) {
+                    result = current;
+                    break;
+                }
+                if (key < current->key_) {
+                    current = current->left_;
+                } else {
+                    current = current->right_;
+                }
+            }
+            return iterator(result, this);
         }
 
     private:

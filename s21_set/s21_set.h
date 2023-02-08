@@ -7,6 +7,7 @@
 namespace s21 {
     template<class Key>
     class set {
+    public:
         using key_type = Key;
         using value_type = Key;
         using reference = value_type &;
@@ -15,8 +16,6 @@ namespace s21 {
         using const_iterator = typename BinaryTree<value_type>::const_iterator;
         using size_type = std::size_t;
         using rb_tree = BinaryTree<value_type>;
-    private:
-        rb_tree *rbTree_;
 
         /*
          * Set Member functions
@@ -29,22 +28,22 @@ namespace s21 {
             }
         }
 
-        set(const set &s) : rbTree_(new rb_tree(*s)) {}
+        set(const set &s) : rbTree_(new rb_tree(*s.rbTree_)) {}
 
-        set(set &&s) noexcept: rbTree_(new rb_tree(std::move(s))) {}
+        set(set &&s) noexcept: rbTree_(new rb_tree(std::move(*s.rbTree_))) {}
 
         ~set() {
             delete rbTree_;
             rbTree_ = nullptr;
         }
 
-        set<key_type> &operator=(const set &s) {
-            rbTree_ = s;
+        set<value_type> &operator=(const set &s) {
+            rbTree_ = s.rbTree_;
             return *this;
         }
 
-        set<key_type> &operator=(set &&s) noexcept {
-            rbTree_ = std::move(s);
+        set<value_type> &operator=(set &&s) noexcept {
+            rbTree_ = std::move(s.rbTree_);
             return *this;
         }
 
@@ -90,7 +89,7 @@ namespace s21 {
         }
 
         std::pair<iterator, bool> insert(const value_type &value) {
-            return rbTree_->insert(value, true);
+            return rbTree_->insert_unique(value);
 
         }
 
@@ -116,7 +115,8 @@ namespace s21 {
         bool contains(const Key &key) {
             return rbTree_->contains(key);
         }
-
+    private:
+        rb_tree *rbTree_;
     };
 }
 
