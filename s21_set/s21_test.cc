@@ -53,6 +53,89 @@ TEST(method, maxsize) {
     EXPECT_EQ(a.max_size(), b.max_size());
 }
 
+TEST(mathod, clear) {
+    s21::set<int> a;
+    std::set<int> b;
+    a.clear();
+    b.clear();
+    EXPECT_EQ(a.size(), b.size());
+    EXPECT_EQ(*a.begin(), *b.begin());
+    a.insert(1);
+    a.insert(2);
+    b.insert(1);
+    b.insert(2);
+    EXPECT_EQ(a.size(), b.size());
+    EXPECT_EQ(*a.begin(), *b.begin());
+    EXPECT_EQ(*a.begin()++, *b.begin()++);
+}
+
+TEST(method, erase) {
+    s21::set<int> a{1, 2, 3, 4, 5, 6, 7};
+    std::set<int> c{1, 2, 3, 4, 5, 6, 7};
+    a.erase(a.begin());
+    c.erase(c.begin());
+    auto it1 = c.begin();
+    for(auto it = a.cbegin(); it != a.cend(); it++) {
+        EXPECT_EQ(*it, *it1);
+        it1++;
+    }
+}
+
+TEST(method, swap) {
+    s21::set<int> a{1, 2, 3, 4, 5, 6, 7};
+    s21::set<int> b{3, 2};
+    std::set<int> c{1, 2, 3, 4, 5, 6, 7};
+    std::set<int> d{3,2};
+    a.swap(b);
+    c.swap(d);
+    auto it1 = a.begin();
+    for(auto it = c.begin(); it != c.end(); it++) {
+        EXPECT_EQ(*it, *it1);
+        it1++;
+    }
+    auto it2 = b.cbegin();
+    for(auto it3 = d.begin(); it3 != d.end(); it3++) {
+        EXPECT_EQ(*it2, *it3);
+        it2++;
+    }
+    EXPECT_EQ(a.size(), c.size());
+    EXPECT_EQ(b.size(), d.size());
+    a = b;
+    auto it3 = a.begin();
+    for(auto it4 = d.begin(); it4 != d.end(); it4++) {
+        EXPECT_EQ(*it4, *it3);
+        it3++;
+    }
+    EXPECT_EQ(a.size(), d.size());
+}
+
+TEST(method, merge) {
+    s21::set<int> a{1, 2, 3, 4, 5, 6, 7};
+    s21::set<int> b{3, 9};
+    std::set<int> c{1, 2, 3, 4, 5, 6, 7, 9};
+    a.merge(b);
+    auto it1 = a.begin();
+    for(auto it = c.begin(); it != c.end(); it++) {
+        EXPECT_EQ(*it, *it1);
+        it1++;
+    }
+}
+
+TEST(method, find) {
+    s21::set<int> a{1, 2, 3, 4, 5, 6, 11, 7, 0};
+    std::set<int> c{1, 2, 3, 4, 5, 6, 11, 7, 0};
+    EXPECT_EQ(*a.find(7), *c.find(7));
+    EXPECT_EQ(*a.find(0), *c.find(0));
+    EXPECT_EQ(*a.find(12), *a.end());
+    EXPECT_EQ(*a.find(1), *c.find(1));
+}
+
+TEST(method, contains) {
+    s21::set<int> a{1, 2, 3, 4, 5, 6, 11, 7, 0};
+    EXPECT_EQ(a.contains(10), false);
+    EXPECT_EQ(a.contains(5), true);
+}
+
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

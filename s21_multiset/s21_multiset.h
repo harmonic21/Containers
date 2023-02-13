@@ -25,7 +25,7 @@ namespace s21 {
          */
         multiset() : rbTree_(new rb_tree{}) {}
 
-        multiset(std::initializer_list<value_type> const &items) {
+        multiset(std::initializer_list<value_type> const &items) : multiset() {
             for (auto it: items) {
                 insert(it);
             }
@@ -33,7 +33,7 @@ namespace s21 {
 
         multiset(const multiset &ms) : rbTree_(new rb_tree(*ms.rbTree_)) {}
 
-        multiset(multiset &&ms) noexcept : rbTree_(new rb_tree(std::move(ms.rbTree_))) {}
+        multiset(multiset &&ms) noexcept : rbTree_(new rb_tree(std::move(*ms.rbTree_))) {}
 
         ~multiset() {
             delete rbTree_;
@@ -41,12 +41,12 @@ namespace s21 {
         }
 
         multiset<value_type> &operator=(const multiset &ms) {
-            rbTree_ = ms.rbTree_;
+           *rbTree_ = *ms.rbTree_;
             return *this;
         }
 
         multiset<value_type> &operator=(multiset &&ms) noexcept {
-            rbTree_ = std::move(ms.rbTree_);
+            *rbTree_ = *std::move(ms.rbTree_);
             return *this;
         }
 
@@ -59,7 +59,7 @@ namespace s21 {
         }
 
         iterator end() noexcept {
-            return rbTree_->begin();
+            return rbTree_->end();
         }
 
         const_iterator cbegin() const noexcept {
@@ -70,20 +70,19 @@ namespace s21 {
             return rbTree_->cend();
         }
 
-
         /*
          * Multiset Capacity
          */
         bool empty() const noexcept {
-            rbTree_->empty();
+            return rbTree_->empty();
         }
 
         size_type size() const noexcept {
-            rbTree_->size();
+            return rbTree_->size();
         }
 
         size_type max_size() const noexcept {
-            rbTree_->max_size();
+            return rbTree_->max_size();
         }
 
         /*
@@ -93,47 +92,73 @@ namespace s21 {
             rbTree_->clear();
         }
 
-        iterator insert(const value_type& value) {
-            rbTree_->insert_not_unique(value);
+        iterator insert(const value_type& value) noexcept {
+            return rbTree_->insert_not_unique(value);
         }
 
-        void erase(iterator pos) {
+        void erase(iterator pos) noexcept {
             rbTree_->erase(pos);
         }
 
-        void swap(multiset& other) {
-            rbTree_->swap(other);
+        void swap(multiset& other) noexcept {
+            rbTree_->s21_swap(*other.rbTree_);
 
         }
-        void merge(multiset& other) {
-            rbTree_->merge(other);
+
+        void merge(multiset& other) noexcept {
+            rbTree_->merge(*other.rbTree_);
         }
 
         /*
          * Multiset Lookup
          */
 
-        size_type count(const Key& key) {
+        size_type count(const Key& key) noexcept {
+            std::pair<iterator, iterator> res = equal_range(key);
+            int count = 0;
+            while (res.first != res.second && *res.first == key) {
+                count++;
+                res.first++;
+            }
+            return count;
         }
 
-        iterator find(const Key& key) {
-            rbTree_->find(key);
+        size_type count(const Key& key) const noexcept{
+            std::pair<iterator, iterator> res = equal_range(key);
+            int count = 0;
+            while (res.first != res.second && *res.first == key) {
+                count++;
+                res.first++;
+
+            }
+            return count;
         }
 
-        bool contains(const Key& key) {
-            rbTree_->contains(key);
+
+        iterator find(const Key& key) const noexcept{
+            return rbTree_->find(key);
         }
 
-        std::pair<iterator,iterator> equal_range(const Key& key) {
+        bool contains(const Key& key) const noexcept{
+            return rbTree_->contains(key);
+        }
 
+        std::pair<iterator,iterator> equal_range(const Key& key) noexcept {
+            return std::pair<iterator, iterator>(lower_bound(key), upper_bound(key));
+        }
+
+        std::pair<iterator,iterator> equal_range(const Key& key) const noexcept {
+            return std::pair<iterator, iterator>(lower_bound(key), upper_bound(key));
         }
 
         iterator lower_bound(const Key& key) {
-
+           return rbTree_->lower_bound(key);
         }
+
         iterator upper_bound(const Key& key) {
-
+            return rbTree_->upper_bound(key);
         }
+
     private:
         rb_tree *rbTree_;
     };

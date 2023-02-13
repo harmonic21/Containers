@@ -24,6 +24,7 @@ namespace s21 {
 
         vector(size_type count) : capacity_(count), size_(count) {
             values_ = reinterpret_cast<T*>(new char[count * sizeof(T)]);
+            memset(values_, 0, sizeof(T) * count);
         }
 
        vector(std::initializer_list<value_type> const &items) : capacity_(items.size()),
@@ -36,12 +37,14 @@ namespace s21 {
             }
         }
 
-       vector(const vector &v) : capacity_(v.capacity_), size_(v.size_), values_(new T[v.capacity_]){
-            memcpy(values_, v.values_, v.size_);
+       vector(const vector &v) : capacity_(v.capacity_), size_(v.size_) {
+            values_ = reinterpret_cast<T*>(new char[v.capacity_ * sizeof(T)]);
+            memcpy(values_, v.values_, v.size_ * sizeof(T));
         }
 
-        vector(vector &&v) noexcept : capacity_(v.capacity_), size_(v.size_) {
-            *this = std::move(v);
+        vector(vector &&v) noexcept : capacity_(v.capacity_), size_(v.size_), values_(nullptr) {
+            std::swap(values_, v.values_);
+            v.size_ = v.capacity_ = 0;
         }
 
        ~vector() noexcept {
@@ -53,7 +56,6 @@ namespace s21 {
 /*
  * constructors overload
  */
-
         vector<T>& operator = (const vector &v) {
             if (this != &v) {
                 this->s21_remove_vector();
@@ -196,15 +198,22 @@ namespace s21 {
                 capacity_ = capacity_ == 0 ? 1 : capacity_ * 2;
             }
             T *new_arr = reinterpret_cast<T*>(new char[capacity_ * sizeof(T)]);
-            for (size_type i = 0, j = 0; i < size_ + 1; i++, j++) {
-                if (&values_[j] == pos) {
-                    new(new_arr + i) T(value);
-                    return_pos = &new_arr[i];
-                    i++;
+            if (pos != nullptr) {
+                for (size_type i = 0, j = 0; i < size_ + 1; i++, j++) {
+                    if (&values_[j] == pos) {
+                        new(new_arr + i) T(value);
+                        return_pos = &new_arr[i];
+                        i++;
+                    }
+                    if ( j < size_) {
+                        new(new_arr + i) T(values_[j]);
+                    }
                 }
-                new (new_arr + i) T(values_[j]);
+                s21_remove_vector();
+            } else {
+                new(new_arr) T(value);
+                return_pos = new_arr;
             }
-            s21_remove_vector();
             values_ = new_arr;
             size_++;
             return return_pos;
@@ -213,11 +222,12 @@ namespace s21 {
         void erase(iterator pos) noexcept {
             T *new_arr = reinterpret_cast<T*>(new char[capacity_ * sizeof(T)]);
             size_--;
-            for(size_type i = 0, j = 0; i <= size_; i++, j++) {
+            for(size_type i = 0, j = 0; i <= size_; i++) {
                 if (&values_[i] == pos) {
-                    i++;
+                    continue;
                 }
                 new (new_arr + j) T(values_[i]);
+                j++;
             }
             s21_remove_vector();
             values_ = new_arr;
@@ -275,7 +285,7 @@ namespace s21 {
                 for (size_type k = 0; k < size_; k++) {
                     (values_ + k)->~T();
                 }
-                delete[] reinterpret_cast<char*>(values_);
+               delete[] reinterpret_cast<char*>(values_);
             }
         }
 

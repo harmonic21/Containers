@@ -22,7 +22,7 @@ namespace s21 {
         */
         set() : rbTree_(new rb_tree{}) {}
 
-        set(std::initializer_list<value_type> const &items) {
+        set(std::initializer_list<value_type> const &items) : set() {
             for (auto it: items) {
                 insert(it);
             }
@@ -38,12 +38,12 @@ namespace s21 {
         }
 
         set<value_type> &operator=(const set &s) {
-            rbTree_ = s.rbTree_;
+            *rbTree_ = *s.rbTree_;
             return *this;
         }
 
         set<value_type> &operator=(set &&s) noexcept {
-            rbTree_ = std::move(s.rbTree_);
+            *rbTree_ = std::move(*s.rbTree_);
             return *this;
         }
 
@@ -98,18 +98,19 @@ namespace s21 {
         }
 
         void swap(set &other) {
-            rbTree_->s21_swap(other);
+            rbTree_->s21_swap(*other.rbTree_);
         }
 
         void merge(set &other) {
-            rbTree_->unique_merge(other);
+            rbTree_->unique_merge(*other.rbTree_);
         }
 
         /*
          * Set Lookup
          */
         iterator find(const Key &key) {
-            return rbTree_->find(key);
+            auto result = rbTree_->find(key);
+            return result == end() ? end() : result;
         }
 
         bool contains(const Key &key) {

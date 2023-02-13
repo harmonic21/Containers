@@ -2,12 +2,6 @@
 #include "s21_tree.h"
 #include "iostream"
 
-/**
- * FIXME:
- * 1) lower_bound
- * 2) upper_bound
- */
-
 TEST(constructor, copy) {
     s21::BinaryTree<int> a;
     a.insert_unique(100);
