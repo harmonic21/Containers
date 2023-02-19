@@ -1,6 +1,7 @@
+#include <iostream>
 #include <gtest/gtest.h>
+
 #include "s21_tree.h"
-#include "iostream"
 
 TEST(constructor, copy) {
     s21::BinaryTree<int> a;

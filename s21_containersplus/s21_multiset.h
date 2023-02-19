@@ -2,7 +2,7 @@
 #define SRC_S21_MULTISET_S21_MULTISET_H
 
 #include <iostream>
-#include "../s21_binary_tree/s21_tree.h"
+#include "s21_tree.h"
 
 namespace s21 {
     template<class Key>
@@ -157,6 +157,11 @@ namespace s21 {
 
         iterator upper_bound(const Key& key) {
             return rbTree_->upper_bound(key);
+        }
+
+        template<class... Args>
+        std::vector<std::pair<iterator,bool>> emplace(Args&&... args) {
+            return rbTree_->emplace(args...);
         }
 
     private:

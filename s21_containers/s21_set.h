@@ -2,7 +2,7 @@
 #define SRC_S21_SET_S21_SET_H
 
 #include <iostream>
-#include "../s21_binary_tree/s21_tree.h"
+#include "s21_tree.h"
 
 namespace s21 {
     template<class Key>
@@ -116,6 +116,12 @@ namespace s21 {
         bool contains(const Key &key) {
             return rbTree_->contains(key);
         }
+
+        template<class... Args>
+        std::vector<std::pair<iterator,bool>> emplace(Args&&... args) {
+            return rbTree_->emplace_uniq(args...);
+        }
+
     private:
         rb_tree *rbTree_;
     };

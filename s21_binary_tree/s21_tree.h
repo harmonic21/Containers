@@ -1,6 +1,7 @@
 #ifndef CPP2_S21_CONTAINERS_0_MASTER_S_21_TREE_H
 #define CPP2_S21_CONTAINERS_0_MASTER_S_21_TREE_H
 #include <iostream>
+#include <vector>
 
 namespace s21 {
     template<typename Key>
@@ -20,11 +21,6 @@ namespace s21 {
         using iterator = Iterator;
         using const_iterator = ConstIterator;
         using size_type = size_t;
-    private:
-        Node *before_root_;
-        Node *nil_;
-        size_type size_{};
-        std::less<key_type> compare_;
     public:
         BinaryTree() : before_root_(new Node()), nil_(new Node()), size_(0) {
             before_root_->parent_ = nil_;
@@ -244,6 +240,29 @@ namespace s21 {
             std::swap(compare_, binaryTree.compare_);
         }
 
+        template<class... Args>
+        std::vector<std::pair<iterator,bool>> emplace(Args&&... args) {
+            std::vector<std::pair<iterator,bool>> res_vector;
+            for(auto value : {std::forward<Args>(args)...}) {
+                Node* new_node = new value_type(value);
+                std::pair<iterator,bool> temp = insert(value, false);
+                res_vector.push_back(temp);
+            }
+            return res_vector;
+
+        }
+
+        template<class... Args>
+        std::vector<std::pair<iterator,bool>> emplace_uniq(Args&&... args) {
+            std::vector<std::pair<iterator,bool>> res_vector;
+            for(auto value : {std::forward<Args>(args)...}) {
+                Node* new_node = new value_type(value);
+                std::pair<iterator,bool> temp = insert(value, true);
+                res_vector.push_back(temp);
+            }
+            return res_vector;
+        }
+
     private:
         void s21_nil_init(Node *current_node) {
             current_node->left_ = current_node->right_ = nil_;
@@ -263,6 +282,7 @@ namespace s21 {
             }
         }
 
+    //статью приложить
         void s21_delete_node(Node *del) {
             if (s21_is_red(del) && del->left_ != nil_ && del->right_ != nil_) {
                 Node *left_max = s21_max_node(del->left_);
@@ -446,6 +466,7 @@ namespace s21 {
             return result;
         }
 
+    // прикрепить и отправить статью
         void s21_balancing_tree_after_insert(Node *current_node) {
             while (current_node != before_root_->parent_ && current_node->parent_->red_) {
                 if (current_node->parent_ == current_node->parent_->parent_->left_) {  //  parent of cn - is left son
@@ -642,6 +663,11 @@ namespace s21 {
             const Node *current_node_;
             const BinaryTree<value_type>* binaryTree_;
         };
+    private:
+        Node *before_root_;
+        Node *nil_;
+        size_type size_{};
+        std::less<key_type> compare_;
     };
 
 }  //  namespace s21

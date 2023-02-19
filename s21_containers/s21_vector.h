@@ -264,18 +264,24 @@ namespace s21 {
         template<class... Args>
         void emplace_back(Args &&... args) {
             if (capacity_ == size_) {
-                reserve(capacity_ == 0 ? 1 : capacity_ * 2);
+                reserve(capacity_ + sizeof...(args));
             }
-            new(values_ + size_) T(args...);
+            iterator it = values_ + size_;
+            for(auto value : {std::forward<Args>(args)...}) {
+                it = insert(values_ + size_, value);
+            }
             size_++;
         }
 
         template<class... Args>
-      iterator emplace(vector<T>::const_iterator pos, Args &&... args) {
+        iterator emplace(vector<T>::const_iterator pos, Args &&... args) {
             if (capacity_ == size_) {
-                reserve(capacity_ == 0 ? 1 : capacity_ * 2);
+                reserve(capacity_ + sizeof...(args));
             }
-            iterator it = insert(pos,new T(args...));
+            iterator it = pos;
+            for(auto value : {std::forward<Args>(args)...}) {
+                it = insert(pos, value);
+            }
             return it;
         }
 

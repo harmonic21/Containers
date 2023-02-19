@@ -9,14 +9,19 @@ endif
 
 
 #INCLUDES
-INCLUDE=s21_vector.h
+INCLUDE=s21_multiset.h
 
 .PHONY: all clean test gcov_report
 
-all: test
+all: build
 
-test:
-	$(CC) $(FLAGS) s21_vector.h test.cc $(TEST_FLAGS)  -o s21_test
+build:
+	$(CC) $(FLAGS) -I../s21_binary_tree s21_containersplus.h -o s21_containersplus
+
+test: test_multi
+
+test_multi:
+	$(CC) $(FLAGS) -I. -I../s21_binary_tree ../tests/test_multiset.cc $(INCLUDE) ../s21_binary_tree/s21_tree.h $(TEST_FLAGS) -o s21_test
 	./s21_test
 
 gcov_report:FLAGS += $(GCOV)
@@ -35,4 +40,5 @@ endif
 
 
 clean:
-	rm -rf objects *.gcno *.gcda *.o *.info report s21_test
+	rm -rf objects *.gcno *.gcda *.o *.info report s21_test \
+	../s21_binary_tree/*.gch ../s21_binary_tree/s21_test

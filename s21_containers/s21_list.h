@@ -303,6 +303,25 @@ namespace s21 {
             }
         }
 
+        template<class... Args>
+        iterator emplace(const_iterator pos, Args&&... args) {
+            iterator it = pos;
+            for(auto value : {std::forward<Args>(args)...}) {
+                it = insert(pos, value);
+            }
+            return it;
+        }
+
+        template<class... Args>
+        void emplace_back(Args&&... args) {
+            emplace(end()--, args...);
+        }
+
+        template<class... Args>
+        void emplace_front(Args&&... args) {
+            emplace(begin(), args...);
+        }
+
         void sort() {
             if (size_ > 1) {
                 last_->prev_->next_ = nullptr;
