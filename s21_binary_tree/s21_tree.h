@@ -82,7 +82,7 @@ class BinaryTree {
 
   size_type max_size() const noexcept { return SIZE_MAX / (sizeof(Node) * 2); }
 
-  void clear() {
+  void clear() noexcept {
     if (size_ != 0) {
       s21_delete_all(before_root_->parent_);
     }
@@ -90,13 +90,13 @@ class BinaryTree {
     size_ = 0;
   }
 
-  iterator insert_not_unique(const value_type &value) {
+  iterator insert_not_unique(const value_type &value) noexcept {
     Node *current = new Node(value);
     iterator res = insert(current, false).first;
     return res;
   }
 
-  std::pair<iterator, bool> insert_unique(const value_type &value) {
+  std::pair<iterator, bool> insert_unique(const value_type &value) noexcept {
     Node *current = new Node(value);
     std::pair<iterator, bool> res = insert(current, true);
     if (res.second == false) {
@@ -105,7 +105,7 @@ class BinaryTree {
     return res;
   }
 
-  std::pair<iterator, bool> insert(Node *new_node, bool is_unique) {
+  std::pair<iterator, bool> insert(Node *new_node, bool is_unique) noexcept {
     Node *current_node = before_root_->parent_;
     Node *parent_for_new_node = nullptr;
     while (current_node != nil_) {
@@ -140,14 +140,14 @@ class BinaryTree {
     return std::pair<iterator, bool>(iterator(new_node, this), true);
   }
 
-  void erase(iterator pos) {
+  void erase(iterator pos) noexcept {
     Node *current_node = pos.get_node();
     if (current_node != nullptr && current_node != nil_) {
       s21_delete_node(current_node);
     }
   }
 
-  void merge(BinaryTree<value_type> &other) {
+  void merge(BinaryTree<value_type> &other) noexcept {
     iterator it = other.begin();
     while (it != other.end()) {
       Node *other_current = it.get_node();
@@ -170,7 +170,7 @@ class BinaryTree {
     }
   }
 
-  void unique_merge(BinaryTree<value_type> &other) {
+  void unique_merge(BinaryTree<value_type> &other) noexcept {
     iterator it = other.begin();
     while (it != other.end()) {
       Node *other_current = it.get_node();
@@ -233,7 +233,7 @@ class BinaryTree {
   }
 
   template <class... Args>
-  std::vector<std::pair<iterator, bool>> emplace(Args &&...args) {
+  std::vector<std::pair<iterator, bool>> emplace(Args &&...args) noexcept {
     std::vector<std::pair<iterator, bool>> res_vector;
     for (auto value : {std::forward<Args>(args)...}) {
       Node *new_node = new Node(value);
@@ -244,7 +244,7 @@ class BinaryTree {
   }
 
   template <class... Args>
-  std::vector<std::pair<iterator, bool>> emplace_uniq(Args &&...args) {
+  std::vector<std::pair<iterator, bool>> emplace_uniq(Args &&...args) noexcept {
     std::vector<std::pair<iterator, bool>> res_vector;
     for (auto value : {std::forward<Args>(args)...}) {
       Node *new_node = new Node(value);
