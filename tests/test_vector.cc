@@ -21,6 +21,16 @@ TEST(constructor, default_constructor) {
     EXPECT_EQ(v.capacity(), v_lib.capacity());
 }
 
+TEST(constructor, operator_one) {
+    s21::vector<int> a;
+    s21::vector<int> b{1, 2, 3, 4, 5, 6};
+    a = b;
+    s21::vector<int> c(std::move(b));
+    s21::vector<int> d(c);
+    EXPECT_EQ(a.size(), c.size());
+    EXPECT_EQ(d.size(), a.size());
+}
+
 TEST(constructor, count) {
     s21::vector<double> v(10);
     std::vector<double> v_lib(10);
@@ -128,6 +138,12 @@ TEST(method, insert) {
     for (; i != v.end() && j != v_lib.end(); i++, j++) {
         EXPECT_EQ(*i, *j);
     }
+}
+
+TEST(method, throws) {
+    s21::vector<int> v;
+    EXPECT_ANY_THROW(v.back());
+    EXPECT_ANY_THROW(v.data());
 }
 
 TEST(method, erase) {
@@ -244,6 +260,175 @@ TEST(method, pop_back) {
         EXPECT_EQ(*i1, *j1);
     }
     EXPECT_EQ(v.empty(), v_lib.empty());
+}
+
+TEST(method, emplace_back) {
+    s21::vector<int> a;
+    std::vector<int> b;
+
+    a.emplace_back(1);
+    a.emplace_back(1);
+    a.emplace_back(2);
+    a.emplace_back(3);
+    a.emplace_back(4);
+    a.emplace_back(5);
+
+    b.emplace_back(1);
+    b.emplace_back(1);
+    b.emplace_back(2);
+    b.emplace_back(3);
+    b.emplace_back(4);
+    b.emplace_back(5);
+
+    auto j = b.begin();
+    for (auto i = a.begin(); i != a.end(); ++i) {
+        EXPECT_EQ(*i, *j);
+        j++;
+    }
+}
+
+TEST(method, emplace_back2) {
+    s21::vector<int> a;
+    std::vector<int> b;
+
+    a.emplace_back(1, 1, 2, 3, 4, 5);
+    b.emplace_back(1);
+    b.emplace_back(1);
+    b.emplace_back(2);
+    b.emplace_back(3);
+    b.emplace_back(4);
+    b.emplace_back(5);
+    EXPECT_EQ(a.size(), b.size());
+    auto j = b.begin();
+    for (auto i = a.begin(); i != a.end(); ++i) {
+        EXPECT_EQ(*i, *j);
+        j++;
+    }
+}
+
+
+TEST(method, emplace_back3) {
+    s21::vector<int> a(0);
+    std::vector<int> b(0);
+
+    a.emplace_back(1, 1, 2, 3, 4, 5);
+    b.emplace_back(1);
+    b.emplace_back(1);
+    b.emplace_back(2);
+    b.emplace_back(3);
+    b.emplace_back(4);
+    b.emplace_back(5);
+
+    EXPECT_EQ(a.size(), b.size());
+    auto j = b.begin();
+    for (auto i = a.begin(); i != a.end(); ++i) {
+        EXPECT_EQ(*i, *j);
+        j++;
+    }
+}
+
+TEST(method, emplace_back4) {
+    s21::vector<int> a{1, 2, 3, 4, 5, 6, 6};
+    std::vector<int> b{1, 2, 3, 4, 5, 6, 6};
+
+    a.emplace_back(1, 1, 2, 3, 4, 5);
+    b.emplace_back(1);
+    b.emplace_back(1);
+    b.emplace_back(2);
+    b.emplace_back(3);
+    b.emplace_back(4);
+    b.emplace_back(5);
+
+    EXPECT_EQ(a.size(), b.size());
+    auto j = b.begin();
+    for (auto i = a.begin(); i != a.end(); ++i) {
+        EXPECT_EQ(*i, *j);
+        j++;
+    }
+}
+
+TEST(method, emplace) {
+    s21::vector<int> a;
+    std::vector<int> b;
+    a.emplace(a.cbegin(), 1, 1, 2, 3, 4, 5);
+
+    b.emplace(b.cbegin(), 1);
+    b.emplace(b.cbegin(), 1);
+    b.emplace(b.cbegin(), 2);
+    b.emplace(b.cbegin(), 3);
+    b.emplace(b.cbegin(), 4);
+    b.emplace(b.cbegin(), 5);
+
+    EXPECT_EQ(a.size(), b.size());
+    auto j = b.begin();
+    for (auto i = a.begin(); i != a.end(); ++i) {
+        EXPECT_EQ(*i, *j);
+        j++;
+    }
+}
+
+TEST(method, emplace1) {
+    s21::vector<int> a;
+    std::vector<int> b;
+    a.emplace(a.cbegin(), 1);
+    a.emplace(a.cbegin(), 1);
+    a.emplace(a.cbegin(), 2);
+    a.emplace(a.cbegin(), 3);
+    a.emplace(a.cbegin(), 4);
+    a.emplace(a.cbegin(), 5);
+    b.emplace(b.cbegin(), 1);
+    b.emplace(b.cbegin(), 1);
+    b.emplace(b.cbegin(), 2);
+    b.emplace(b.cbegin(), 3);
+    b.emplace(b.cbegin(), 4);
+    b.emplace(b.cbegin(), 5);
+
+    EXPECT_EQ(a.size(), b.size());
+    auto j = b.begin();
+    for (auto i = a.begin(); i != a.end(); ++i) {
+        EXPECT_EQ(*i, *j);
+        j++;
+    }
+}
+
+TEST(method, emplace2) {
+    s21::vector<int> a(0);
+    std::vector<int> b(0);
+    a.emplace(a.cbegin(), 1, 1, 2, 3, 4, 5);
+
+    b.emplace(b.cbegin(), 1);
+    b.emplace(b.cbegin(), 1);
+    b.emplace(b.cbegin(), 2);
+    b.emplace(b.cbegin(), 3);
+    b.emplace(b.cbegin(), 4);
+    b.emplace(b.cbegin(), 5);
+
+    EXPECT_EQ(a.size(), b.size());
+    auto j = b.begin();
+    for (auto i = a.begin(); i != a.end(); ++i) {
+        EXPECT_EQ(*i, *j);
+        j++;
+    }
+}
+
+TEST(method, emplace3) {
+    s21::vector<int> a{1, 2, 3, 4, 5, 6, 7, 8};
+    std::vector<int> b{1, 2, 3, 4, 5, 6, 7, 8};
+    a.emplace(a.cbegin(), 1, 1, 2, 3, 4, 5);
+
+    b.emplace(b.cbegin(), 1);
+    b.emplace(b.cbegin(), 1);
+    b.emplace(b.cbegin(), 2);
+    b.emplace(b.cbegin(), 3);
+    b.emplace(b.cbegin(), 4);
+    b.emplace(b.cbegin(), 5);
+
+    EXPECT_EQ(a.size(), b.size());
+    auto j = b.begin();
+    for (auto i = a.begin(); i != a.end(); ++i) {
+        EXPECT_EQ(*i, *j);
+        j++;
+    }
 }
 
 TEST(method, swap) {

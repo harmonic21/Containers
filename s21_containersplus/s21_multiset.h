@@ -25,7 +25,7 @@ namespace s21 {
          */
         multiset() : rbTree_(new rb_tree{}) {}
 
-        multiset(std::initializer_list<value_type> const &items) : multiset() {
+        explicit multiset(std::initializer_list<value_type> const &items) : multiset() {
             for (auto it: items) {
                 insert(it);
             }
@@ -151,11 +151,19 @@ namespace s21 {
             return std::pair<iterator, iterator>(lower_bound(key), upper_bound(key));
         }
 
-        iterator lower_bound(const Key& key) {
+        iterator lower_bound(const Key& key) noexcept {
            return rbTree_->lower_bound(key);
         }
 
-        iterator upper_bound(const Key& key) {
+        iterator lower_bound(const Key& key) const noexcept {
+            return rbTree_->lower_bound(key);
+        }
+
+        iterator upper_bound(const Key& key) noexcept{
+            return rbTree_->upper_bound(key);
+        }
+
+        iterator upper_bound(const Key& key) const noexcept{
             return rbTree_->upper_bound(key);
         }
 

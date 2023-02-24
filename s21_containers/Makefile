@@ -1,5 +1,5 @@
 CC=g++
-FLAGS=-Wall -Wextra -Werror -g --std=c++11
+FLAGS=-Wall -Wextra -Werror -g --std=c++17
 GCOV=-coverage
 UNAME := $(shell uname)
 
@@ -11,10 +11,7 @@ TEST_DIR=../tests/
 
 .PHONY: all clean test gcov_report
 
-all: build
-
-build:
-	$(CC) $(FLAGS) -I../s21_binary_tree s21_containers.h -o s21_containers
+all: test
 
 test: test_list test_set test_vector
 
@@ -36,14 +33,21 @@ gcov_report: clean test
 	genhtml -o report gcov_report.info;
 	open ./report/index.html
 
-valgrind:
+check:
+	bash ../style.sh
+	cppcheck --std=c++17 --language=c++ --enable=all --suppress=missingIncludeSystem *.h \
+																		../tests/test_list.cc \
+																		../tests/test_set.cc \
+																		../tests/test_vector.cc
+
+valgrind: test_list test_set test_vector
 ifeq ($(UNAME), Linux)
-	valgrind --leak-check=full ./s21_test
+	valgrind --leak-check=full ./s21_test_list ./s21_test_set ./s21_test_vector
 else
-	leaks --atExit -- ./s21_test
+	leaks --atExit -- test_list ./s21_test_set ./s21_test_vector
 endif
 
 
 clean:
 	rm -rf objects *.gcno *.gcda *.o *.info report s21_test_vector s21_test_set s21_test_list \
-	../s21_binary_tree/*.gch ../s21_binary_tree/s21_test
+	../s21_binary_tree/*.gch ../s21_binary_tree/s21_test_tree

@@ -5,7 +5,6 @@
 TEST(constructor, isdefault) {
     std::set<int> a;
     s21::set<int> b;
-    EXPECT_EQ(*a.begin(), *b.begin());
     EXPECT_EQ(a.size(), b.size());
     EXPECT_EQ(a.empty(), b.empty());
 }
@@ -59,7 +58,7 @@ TEST(mathod, clear) {
     a.clear();
     b.clear();
     EXPECT_EQ(a.size(), b.size());
-    EXPECT_EQ(*a.begin(), *b.begin());
+    EXPECT_EQ(*a.begin(), 0);
     a.insert(1);
     a.insert(2);
     b.insert(1);
@@ -134,6 +133,98 @@ TEST(method, contains) {
     s21::set<int> a{1, 2, 3, 4, 5, 6, 11, 7, 0};
     EXPECT_EQ(a.contains(10), false);
     EXPECT_EQ(a.contains(5), true);
+}
+
+TEST(method, contains2) {
+    const s21::set<int> a{1, 2, 3, 4, 5, 6, 11, 7, 0};
+    EXPECT_EQ(a.contains(10), false);
+    EXPECT_EQ(a.contains(5), true);
+}
+
+TEST(method, emplace) {
+    s21::set<int> a;
+    std::set<int> b;
+    a.emplace(1);
+    a.emplace(1);
+    a.emplace(2);
+    a.emplace(3);
+    a.emplace(4);
+    a.emplace(5);
+
+    b.emplace(1);
+    b.emplace(1);
+    b.emplace(2);
+    b.emplace(3);
+    b.emplace(4);
+    b.emplace(5);
+    EXPECT_EQ(a.size(), b.size());
+    auto it1 = a.begin();
+    for(auto it = b.begin(); it != b.end(); it++) {
+        EXPECT_EQ(*it, *it1);
+        it1++;
+    }
+}
+
+TEST(method, emplace1) {
+    s21::set<int> a{1, 2, 3, 40, 60};
+    std::set<int> b{1, 2, 3, 40, 60};
+    a.emplace(1);
+    a.emplace(1);
+    a.emplace(2);
+    a.emplace(3);
+    a.emplace(4);
+    a.emplace(5);
+
+    b.emplace(1);
+    b.emplace(1);
+    b.emplace(2);
+    b.emplace(3);
+    b.emplace(4);
+    b.emplace(5);
+    EXPECT_EQ(a.size(), b.size());
+    auto it1 = a.begin();
+    for(auto it = b.begin(); it != b.end(); it++) {
+        EXPECT_EQ(*it, *it1);
+        it1++;
+    }
+}
+
+TEST(method, emplace3) {
+    s21::set<int> a{1, 2, 3, 40, 60};
+    std::set<int> b{1, 2, 3, 40, 60};
+    a.emplace(1, 1, 2, 3, 4, 5);
+
+    b.emplace(1);
+    b.emplace(1);
+    b.emplace(2);
+    b.emplace(3);
+    b.emplace(4);
+    b.emplace(5);
+    EXPECT_EQ(a.size(), b.size());
+    auto it1 = a.begin();
+    for(auto it = b.begin(); it != b.end(); it++) {
+        EXPECT_EQ(*it, *it1);
+        it1++;
+    }
+}
+
+TEST(method, emplace4) {
+    s21::set<int> a;
+    std::set<int> b;
+    a.emplace(1, 1, 2, 3, 4, 5);
+
+    b.emplace(1);
+    b.emplace(1);
+    b.emplace(2);
+    b.emplace(3);
+    b.emplace(4);
+    b.emplace(5);
+    EXPECT_EQ(a.size(), b.size());
+    auto it1 = a.begin();
+    for(auto it = b.begin(); it != b.end(); it++) {
+        EXPECT_EQ(*it, *it1);
+        it1++;
+    }
 }
 
 int main(int argc, char** argv) {
