@@ -3,8 +3,9 @@
 #include <iostream>
 #include <vector>
 
+
 namespace s21 {
-template <typename Key>
+template <typename Key ,typename Compare = std::less<Key>>
 class BinaryTree {
  private:
   class Iterator;
@@ -16,8 +17,8 @@ class BinaryTree {
  public:
   using key_type = Key;
   using value_type = Key;
-  using reference = value_type &;
-  using const_reference = const value_type &;
+  using reference = key_type&;
+  using const_reference = const key_type&;
   using iterator = Iterator;
   using const_iterator = ConstIterator;
   using size_type = size_t;
@@ -27,7 +28,7 @@ class BinaryTree {
     before_root_->parent_ = nil_;
   };
 
-  BinaryTree(const BinaryTree<value_type> &binaryTree) : BinaryTree() {
+  BinaryTree(const BinaryTree<value_type, Compare> &binaryTree) : BinaryTree() {
     if (!binaryTree.empty()) {
       s21_copy_tree(binaryTree);
     }
@@ -39,7 +40,7 @@ class BinaryTree {
     }
   }
 
-  BinaryTree<value_type> &operator=(const BinaryTree<value_type> &binaryTree) {
+  BinaryTree<value_type, Compare> &operator=(const BinaryTree<value_type, Compare> &binaryTree) {
     if (&binaryTree != this && !binaryTree.empty()) {
       clear();
       s21_copy_tree(binaryTree);
@@ -47,8 +48,8 @@ class BinaryTree {
     return *this;
   }
 
-  BinaryTree<value_type> &operator=(
-      BinaryTree<value_type> &&binaryTree) noexcept {
+  BinaryTree<value_type, Compare> &operator=(
+      BinaryTree<value_type, Compare> &&binaryTree) noexcept {
     if (&binaryTree != this) {
       clear();
       s21_swap(binaryTree);
@@ -147,7 +148,7 @@ class BinaryTree {
     }
   }
 
-  void merge(BinaryTree<value_type> &other) noexcept {
+  void merge(BinaryTree<value_type, Compare> &other) noexcept {
     iterator it = other.begin();
     while (it != other.end()) {
       Node *other_current = it.get_node();
@@ -170,7 +171,7 @@ class BinaryTree {
     }
   }
 
-  void unique_merge(BinaryTree<value_type> &other) noexcept {
+  void unique_merge(BinaryTree<value_type, Compare> &other) noexcept {
     iterator it = other.begin();
     while (it != other.end()) {
       Node *other_current = it.get_node();
@@ -189,7 +190,7 @@ class BinaryTree {
 
   iterator find(const_reference value) noexcept {
     auto it = lower_bound(value);
-    return it.get_node()->key_ == value ? it : end();
+    return (it == end() || compare_(value, *it)) ? end() : it;
   }
 
   bool contains(const Key &key) noexcept {
@@ -225,7 +226,7 @@ class BinaryTree {
     return iterator(result, this);
   }
 
-  void s21_swap(BinaryTree<value_type> &binaryTree) noexcept {
+  void s21_swap(BinaryTree<value_type, Compare> &binaryTree) noexcept {
     std::swap(before_root_->parent_, binaryTree.before_root_->parent_);
     std::swap(size_, binaryTree.size_);
     std::swap(nil_, binaryTree.nil_);
@@ -247,7 +248,9 @@ class BinaryTree {
   std::vector<std::pair<iterator, bool>> emplace_uniq(Args &&...args) noexcept {
     std::vector<std::pair<iterator, bool>> res_vector;
     for (auto value : {std::forward<Args>(args)...}) {
-      Node *new_node = new Node(value);
+        Node *new_node = new Node(value);
+        //  Node *new_node;
+       // new_node = new Node(static_cast<value_type>(value));
       std::pair<iterator, bool> temp = insert(new_node, true);
       if (!temp.second) {
           delete new_node;
@@ -277,21 +280,25 @@ class BinaryTree {
   }
 
   // https://temofeev.ru/info/articles/udalenie-uzlov-iz-krasno-chyernogo-dereva/
+
   void s21_delete_node(Node *del) {
     if (s21_is_red(del) && del->left_ != nil_ && del->right_ != nil_) {
       Node *left_max = s21_max_node(del->left_);
-      std::swap(left_max->key_, del->key_);
-      s21_delete_node(left_max);
+//      std::swap(left_max->key_, del->key_);
+        s21_swap_node(del, left_max);
+      s21_delete_node(del);
     } else if (s21_is_black(del) && del->left_ != nil_ && del->right_ != nil_) {
       Node *left_max = s21_max_node(del->left_);
-      std::swap(left_max->key_, del->key_);
-      s21_delete_node(left_max);
+//      std::swap(left_max->key_, del->key_);
+        s21_swap_node(del, left_max);
+      s21_delete_node(del);
     } else if (s21_is_black(del) &&
                (del->left_ != nil_ || del->right_ != nil_)) {
       // у черного узла - если один ребенок, то точно красный без детей
       Node *son = del->left_ != nil_ ? del->left_ : del->right_;
-      std::swap(son->key_, del->key_);
-      s21_delete_node(son);
+//      std::swap(son->key_, del->key_);
+        s21_swap_node(del, son);
+      s21_delete_node(del);
     } else if (s21_is_red(del) && del->right_ == nil_ && del->left_ == nil_) {
       s21_delete_son(del);
     } else if (s21_is_black(del) && del->right_ == nil_ && del->left_ == nil_) {
@@ -318,15 +325,17 @@ class BinaryTree {
     if (s21_is_red(current) && current->left_ != nil_ &&
         current->right_ != nil_) {
       Node *left_max = s21_max_node(current->left_);
-      std::swap(left_max->key_, current->key_);
-      s21_cut_node(left_max);
-      result = left_max;
+        s21_swap_node(current, left_max);
+//      std::swap(left_max->key_, current->key_);
+      s21_cut_node(current);
+      result = current;
     } else if (s21_is_black(current) && current->left_ != nil_ &&
                current->right_ != nil_) {
       Node *left_max = s21_max_node(current->left_);
-      std::swap(left_max->key_, current->key_);
-      s21_cut_node(left_max);
-      result = left_max;
+        s21_swap_node(current, left_max);
+//      std::swap(left_max->key_, current->key_);
+      s21_cut_node(current);
+      result = current;
     } else if (s21_is_black(current) &&
                (current->left_ != nil_ || current->right_ != nil_)) {
       // у черного узла - если один ребенок, то точно красный без детей
@@ -360,36 +369,66 @@ class BinaryTree {
     }
   }
 
+
+  /*
+   * Исходим из того, что при вызове функции - current выше по дереву чем other
+   * Т.е. если меняем отца с сыном, то current - это отец
+   */
   void s21_swap_node(Node *current, Node *other) {
-    if (current->parent_->left_ == current) {
-      current->parent_->left_ = other;
-    } else if (current->parent_->right_ == current) {
-      current->parent_->right_ = other;
-    }
-    if (current->right_ != nil_ && current->right_ != other) {
-      current->right_->parent_ = other;
-    }
-    if (current->left_ != nil_ && current->left_ != other) {
-      current->left_->parent_ = other;
-    }
-    if (other->left_ != nil_) {
-      other->left_->parent_ = current;
-    }
-    if (other->right_ != nil_) {
-      other->right_->parent_ = current;
-    }
-    other->parent_ = current->parent_;
-    current->parent_ = other;
-    if (current->left_ == other) {
-      current->left_ = other->left_;
-      other->left_ = current;
+      if (before_root_->parent_ == current) {
+          before_root_->parent_ = other;
+      }
+      //меняем ссылки current родителя на детей
+      if (current->parent_ != nullptr && current->parent_->right_ == current) {
+          current->parent_->right_ = other;
+      } else if (current->parent_ != nullptr && current->parent_->left_ == current) {
+          current->parent_->left_ = other;
+      }
+      //меняем ссылки other родителя на детей
+      if (current != other->parent_ && other->parent_->right_ == other) {
+          other->parent_->right_ = current;
+      } else if (current != other->parent_ && other->parent_->left_ == other) {
+          other->parent_->left_ = current;
+      }
+      //меняем ссылки current детей на родителей
+      if (current->right_ != nil_ && current->right_ != other) {
+          current->right_->parent_ = other;
+      }
+      if (current->left_ != nil_ && current->left_ != other) {
+          current->left_->parent_ = other;
+      }
+      //меняем ссылки other детей на родителей
+      if (other->left_ != nil_) {
+          other->left_->parent_ = current;
+      }
+      if (other->right_ != nil_) {
+          other->right_->parent_ = current;
+      }
+      s21_swap_parent(current, other);
+      s21_swap_left_son(current, other);
+      s21_swap_right_son(current, other);
+      std::swap(current->red_, other->red_);
+  }
+
+  void s21_swap_parent(Node *current, Node *other) {
+      std::swap(other->parent_, current->parent_);
+      if (current->parent_ == current) {
+          current->parent_ = other;
+      }
+  }
+
+  void s21_swap_right_son(Node *current, Node *other) {
       std::swap(other->right_, current->right_);
-    } else {
-      current->right_ = other->right_;
-      other->right_ = current;
-      std::swap(current->left_, other->left_);
-    }
-    std::swap(current->red_, other->red_);
+      if (other->right_ == other) {
+          other->right_ = current;
+      }
+  }
+
+  void s21_swap_left_son(Node *current, Node *other) {
+      std::swap(other->left_, current->left_);
+      if (other->left_ == other) {
+          other->left_ = current;
+      }
   }
 
   //  https://habr.com/ru/company/otus/blog/521034/
@@ -696,7 +735,7 @@ class BinaryTree {
    public:
     ConstIterator() = delete;
 
-    ConstIterator(const Node *n, const BinaryTree<value_type> *binaryTree)
+    ConstIterator(const Node *n, const BinaryTree<value_type, Compare> *binaryTree)
         : current_node_(n), binaryTree_(binaryTree){};
 
     reference operator*() const noexcept {
@@ -738,14 +777,14 @@ class BinaryTree {
 
    private:
     const Node *current_node_;
-    const BinaryTree<value_type> *binaryTree_;
+    const BinaryTree<value_type, Compare> *binaryTree_;
   };
 
  private:
   Node *before_root_;
   Node *nil_;
   size_type size_{};
-  std::less<key_type> compare_;
+  Compare compare_;
 };
 
 }  //  namespace s21

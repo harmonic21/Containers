@@ -10,7 +10,7 @@ template <class Key>
 class set {
  public:
   using key_type = Key;
-  using value_type = Key;
+  using value_type = key_type;
   using reference = value_type &;
   using const_reference = const value_type &;
   using iterator = typename BinaryTree<value_type>::iterator;
